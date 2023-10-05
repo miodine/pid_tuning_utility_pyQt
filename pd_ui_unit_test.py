@@ -1,0 +1,22 @@
+from PyQt5 import QtCore, QtGui, QtWidgets
+import qdarkstyle
+
+
+
+from pd_ui_ver_03 import Ui_MainWindow
+
+import sys
+
+# UNIT TEST
+if __name__ == "__main__":
+    
+
+    app = QtWidgets.QApplication(sys.argv)
+    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+
+    sys.exit(app.exec_())
