@@ -1,4 +1,4 @@
-from pd_comm_server import ServerHandle
+from app.pd_comm_server import ServerHandle
 from pymavlink import mavutil
 
 import time
@@ -9,7 +9,6 @@ if __name__ == "__main__":
     sitl_platform_udp = 'udpin:localhost:14551'
     sh = ServerHandle(sitl_platform_udp)
     
-
     msg_cnt = 0
     
     prev_delta = None

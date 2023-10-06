@@ -1,5 +1,7 @@
-from pd_ui_ver_03_1 import Ui_MainWindow
-from pd_comm_server import ServerHandle
+
+
+from layout.pd_ui_ver_03_1 import Ui_MainWindow
+from app.pd_comm_server import ServerHandle
 
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
@@ -18,6 +20,17 @@ import numpy as np
 
 import time 
 
+
+
+
+# Control Map
+# SRC: https://doc.qt.io/archives/qtjambi-4.5.2_01/com/trolltech/qt/core/Qt.Key.html
+CTL_KEYBOARD_MAP = {
+    "UP": Qt.Key_W, 
+    "DOWN": Qt.Key_S, 
+    "YAW":None}
+
+
 class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self,parent = None):
         # Setup Super Class
@@ -30,8 +43,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.__init_dynamic_plot()
         self.__init_class_variables()
         self.__init_server_connector()
-
-
+        self.__init_keyboard_control()
 
     def retranslateUi(self, MainWindow):
         super().retranslateUi(MainWindow)
@@ -58,7 +70,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.first_ticks = 0
         self.plot_buffer = np.zeros(101)
 
-    def __init_keyboard_handle(self):
+    def __init_keyboard_control(self):
         pass
 
     def _dynamic_plot_update(self):
@@ -81,11 +93,20 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         #         self.plot_buffer[i-1] = self.plot_buffer_[i]
     
     def _server_connector_routine(self):
+        print("SERVER: Initializing Connection...")
         self.server_handle = ServerHandle('udpin:localhost:14551')
+        print("SERVER: Connection Initialized.")
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Shift:
-            print("XD")
+    # def keyPressEvent(self, event):
+    #     if event.key() == Qt.Key_Shift:
+    #         self.yaw_target += self.YAW_INCR
+            
+
+    #     if event.key() == Qt.Key_Control:
+    #         self.yaw_target -= self.YAW_INCR
+        
+    #     self.server_handle.TEST_YAW = self.yaw_target    
+    #     self.server_handle.send_desired_yaw_RC()
 
 
 

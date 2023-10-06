@@ -2,11 +2,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import qdarkstyle
 
-from pd_view_model import ViewModel
+from app.pd_view_model import ViewModel
 
 # General Dependencies
 import sys
-
 
 # Application Entry Point
 if __name__ == "__main__":
