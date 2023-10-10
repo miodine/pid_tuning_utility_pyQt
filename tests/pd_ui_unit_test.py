@@ -1,7 +1,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import qdarkstyle
 
-
+import sys
+sys.path.append("./")
 
 from layout.pd_ui_ver_03 import Ui_MainWindow
 

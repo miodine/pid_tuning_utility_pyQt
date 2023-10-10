@@ -1,7 +1,12 @@
+import sys 
+
+sys.path.append("./")
+
 from app.pd_comm_server import ServerHandle
 from pymavlink import mavutil
 
 import time
+
 
 
 # UNIT TEST
@@ -19,8 +24,9 @@ if __name__ == "__main__":
     while 1:
         fetch_begin = time.time()
         
-        sh.get_telemetry()
-
+        print("TARGET: ", sh.get_attitude_target_numpy())
+        print("\n")
+        print("ACTUAL: ", sh.get_attitude_numpy())
 
         msg_cnt += 1
         fetch_end = time.time()

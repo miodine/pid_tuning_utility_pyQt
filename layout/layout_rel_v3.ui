@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>630</width>
+    <width>633</width>
     <height>802</height>
    </rect>
   </property>
@@ -283,27 +283,37 @@
       <x>10</x>
       <y>690</y>
       <width>601</width>
-      <height>31</height>
+      <height>41</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="layout_tuning_apply">
      <item>
-      <widget class="QPushButton" name="button_send_custom_tuning">
+      <widget class="QPushButton" name="button_upload_tuning">
        <property name="enabled">
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>Set tuning values defined above</string>
+        <string>Upload Tuning</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="button_send_default_tuning">
+      <widget class="QPushButton" name="button_download_tuning">
        <property name="enabled">
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>Reset tuning values</string>
+        <string>Download Tuning</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="button_upload_default_tuning">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="text">
+        <string>Upload Default Tuning</string>
        </property>
       </widget>
      </item>
@@ -355,8 +365,14 @@
        <property name="decimals">
         <number>3</number>
        </property>
+       <property name="minimum">
+        <double>3.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>12.000000000000000</double>
+       </property>
        <property name="singleStep">
-        <double>0.010000000000000</double>
+        <double>0.001000000000000</double>
        </property>
       </widget>
      </item>
@@ -474,6 +490,13 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QCheckBox" name="checkbox_combine_roll_pitch_axes">
+       <property name="text">
+        <string>Combine Roll and Pitch Axes</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </widget>
    <widget class="Line" name="line_3">
@@ -496,7 +519,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>630</width>
+     <width>633</width>
      <height>22</height>
     </rect>
    </property>
