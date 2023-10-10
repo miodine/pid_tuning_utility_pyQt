@@ -69,7 +69,7 @@ class ServerHandle():
         try: 
             r = R.from_quat(np.array(self.attitude_target.q))
             r = r.as_euler('zyx', degrees=False).T
-            r[2] += math.pi
+            r[2] -= math.pi
             r[2] = -r[2]
             r[0] = -r[0]
 

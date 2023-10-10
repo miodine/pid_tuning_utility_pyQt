@@ -15,7 +15,6 @@ import numpy as np
 from collections import deque
 
 # Server Dependencies
-
 import time 
 
 
@@ -31,7 +30,6 @@ csm = sm.cmd_status_monit
 
 # Keys
 # SRC: https://doc.qt.io/archives/qtjambi-4.5.2_01/com/trolltech/qt/core/Qt.Key.html
-
 class SPBC:
     def __init__(self,min_,max_,step_):
         self.min = float(min_)
@@ -94,6 +92,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         _translate = QtCore.QCoreApplication.translate
         
         self.checkbox_combine_pi_values.setEnabled(False)
+        self.checkbox_combine_roll_pitch_axes.setEnabled(False)
 
     def __init_dynamic_plot(self):
         # Constants
@@ -107,7 +106,8 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.axis_to_plot = -1
         self.atp = self.axis_to_plot
 
-        self.t = np.linspace(start = 0, stop = self._T_max, num= self._n)
+        self.t = np.linspace(start = -self._T_max, stop = 0, num= self._n)
+
         self.dp_attitude        = np.zeros((3,self._n))
         self.dp_attitude_target = np.zeros((3,self._n))
 
@@ -120,11 +120,13 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.dynamic_plot.addWidget(dynamic_canvas)
         self.dynamic_plot.setGeometry(QtCore.QRect(10, 10, 20, 10))
         self._dynamic_ax = dynamic_canvas.figure.subplots()
-        self._dynamic_ax.xaxis.set_visible(False)
 
         self._timer = dynamic_canvas.new_timer(
             10, [(self._dynamic_plot_update, (), {})])
         self._timer.start()
+
+
+
 
     def __init_server_connector(self):
         # Server Connector
@@ -166,6 +168,8 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.I_ROLL_PITCH_MULTIPLIER = 1
         self.PI_lock_enabled = False   # ... szpachla...
         
+        # ROLL-PITCH Lock Variables
+        self.ROLL_PITCH_lock_enabled = False
 
 
         # Default PID values - taken directly from the flight controller board
@@ -198,12 +202,11 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.button_download_tuning.clicked.connect(self._download_controller_values)
         self.button_upload_default_tuning.clicked.connect(self._upload_default_controller_values)
 
-        self.checkbox_combine_pi_values.toggled.connect(self._yaw_PI_lock)
+        self.checkbox_combine_pi_values.toggled.connect(self._PI_lock)
+        self.checkbox_combine_roll_pitch_axes.toggled.connect(self._roll_pitch_lock)
 
-        self.var_spinbox_rate_P.valueChanged.connect(lambda: self._evaluate_yaw_PI_lock(self.PaID["P_RATE"]))
-        self.var_spinbox_rate_I.valueChanged.connect(lambda: self._evaluate_yaw_PI_lock(self.PaID["I_RATE"]))
-
-
+        self.var_spinbox_rate_P.valueChanged.connect(lambda: self._evaluate_PI_lock(self.PaID["P_RATE"]))
+        self.var_spinbox_rate_I.valueChanged.connect(lambda: self._evaluate_PI_lock(self.PaID["I_RATE"]))
 
 
 
@@ -221,21 +224,35 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             self._ui_set_enabled_all(True)
             self.PI_lock_enabled = False # entry point for the state machine
+            self.ROLL_PITCH_lock_enabled = False
 
             if selected_axis == 2:
                 self.checkbox_combine_pi_values.setEnabled(True)
                 self.checkbox_combine_pi_values.setChecked(False)
+                self.checkbox_combine_roll_pitch_axes.setEnabled(False)
+                self.checkbox_combine_roll_pitch_axes.setChecked(False)
+
+            elif selected_axis == 0 or selected_axis == 1:
+                self.checkbox_combine_pi_values.setEnabled(True)
+                self.checkbox_combine_pi_values.setChecked(False)
+                self.checkbox_combine_roll_pitch_axes.setEnabled(True)
+                self.checkbox_combine_roll_pitch_axes.setChecked(False)
 
             else:
                 self.checkbox_combine_pi_values.setChecked(False)
                 self.checkbox_combine_pi_values.setEnabled(False)
-            
+                self.checkbox_combine_roll_pitch_axes.setEnabled(False)
+                self.checkbox_combine_roll_pitch_axes.setChecked(False)
+
+
+    # FIXME: Refactor. Indicate that this method concerns only spinbox (or common datafields)         
     def _ui_set_enabled_all(self, enabled: bool):
         self.var_spinbox_rate_P.setEnabled(enabled)
         self.var_spinbox_rate_I.setEnabled(enabled)
         self.var_spinbox_rate_D.setEnabled(enabled)
         self.var_spinbox_stabilization_P.setEnabled(enabled)
         
+
         # no max accelleration at this time
         self.var_spinbox_stabilization_Accel.setEnabled(False)
     
@@ -320,10 +337,13 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.atp in range(0,3):
             # Plot the trajectories
             self._dynamic_ax.clear()
-            self._dynamic_ax.plot(self.t, self.dp_attitude[self.atp,:])
-            self._dynamic_ax.plot(self.t, self.dp_attitude_target[self.atp,:])
+            self._dynamic_ax.plot(self.t, self.dp_attitude[self.atp,:], label = "Actual")
+            self._dynamic_ax.plot(self.t, self.dp_attitude_target[self.atp,:], label="Target")
+            self._dynamic_ax.legend()
+            self._dynamic_ax.grid()
         
         self._dynamic_ax.figure.canvas.draw()
+
 
     def _server_connector_routine(self):
         self.server_handle = ServerHandle('udpin:localhost:14551')
@@ -334,6 +354,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.regulation_error = self.attitude_target_t - self.attitude_t\
 
     def _download_controller_values(self):
+        csm("Downloading controller parameter values from the flight controller...")
         if self.atp == 0:
             self.pid_rate = self.sh.get_RATE_ROLL_PID()
             self.p_stab = self.sh.get_STAB_ROLL_P()
@@ -346,7 +367,10 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
             self.pid_rate = self.sh.get_RATE_YAW_PID()
             self.p_stab = self.sh.get_STAB_YAW_P()
 
+        # FIXME: try-except routine for checking of download errors.
+        csm("Download complete.")
         self._ui_update_static_textfields()
+
 
     def _get_init_default_controller_values(self,axis_id):
         no_params_flag = None 
@@ -378,15 +402,29 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pid_rate[2] = self.var_spinbox_rate_D.value()
         self.p_stab = self.var_spinbox_stabilization_P.value()
 
-        if self.atp == 0:
-            self.sh.set_RATE_STAB_ROLL(self.pid_rate, self.p_stab)
-        elif self.atp == 1:
-            self.sh.set_RATE_STAB_PITCH(self.pid_rate, self.p_stab)
-        elif self.atp == 2:
-            self.sh.set_RATE_STAB_YAW(self.pid_rate, self.p_stab)
+        csm("Uploading the tuning...")
 
-    # FIXME: Boilerplate
+        # FIXME: Optimize the logic.
+        if self.ROLL_PITCH_lock_enabled is True and (self.atp == 0 or self.atp == 1):
+            self.sh.set_RATE_STAB_ROLL(self.pid_rate, self.p_stab)
+            self.sh.set_RATE_STAB_PITCH(self.pid_rate, self.p_stab)
+            csm("Upload successful. Pitch and roll transmitted together")
+        else:    
+            if self.atp == 0:
+                self.sh.set_RATE_STAB_ROLL(self.pid_rate, self.p_stab)
+            elif self.atp == 1:
+                self.sh.set_RATE_STAB_PITCH(self.pid_rate, self.p_stab)
+            elif self.atp == 2:
+                self.sh.set_RATE_STAB_YAW(self.pid_rate, self.p_stab)
+
+            csm("Upload successful.")
+        
+
+
+
+    # FIXME: Boilerplate. Transmission error handling
     def _upload_default_controller_values(self):
+        csm("Transmitting default controller parameters...")
         if self.atp == 0:
             self.pid_rate[0] = self.pid_rate_def_roll[0]
             self.pid_rate[1] = self.pid_rate_def_roll[1]
@@ -407,31 +445,53 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
             self.pid_rate[2] = self.pid_rate_def_yaw[2]
             self.p_stab = self.p_stab_def_yaw  
             self.sh.set_RATE_STAB_YAW(self.pid_rate, self.p_stab)
-        
+
+        csm("Default parameters sent. Transmission complete.")        
         self._ui_update_static_textfields()
 
-    def _yaw_PI_lock(self):
-        # Toggle state flag
+    def _PI_lock(self):
+        # Toggle the state flag
         self.PI_lock_enabled = not self.PI_lock_enabled
         #self.var_spinbox_rate_I.setEnabled(self.PI_lock_disabled)
-        csm("Yaw PI lock enabled. Ki = {}*Kp".format(self.I_YAW_MULTIPLIER))
-    
-    def _evaluate_yaw_PI_lock(self, changed_param_id):
+        if self.PI_lock_enabled is True:
+            csm("PI lock enabled. YAW: Ki = {}*Kp, ROLL/PITCH: Ki = {}*Kp".format(self.I_YAW_MULTIPLIER, self.I_ROLL_PITCH_MULTIPLIER))
+        else:
+            csm("PI lock disabled.")
+
+
+    def _evaluate_PI_lock(self, changed_param_id):
+        
+        coupling_value = 1
+        inv_coupling_value = 1
+
+        if self.atp == 0 or self.atp == 1:
+            coupling_value = self.I_ROLL_PITCH_MULTIPLIER
+        elif self.atp == 2:
+            coupling_value = self.I_YAW_MULTIPLIER
+
+        try:
+            inv_coupling_value = 1.0/coupling_value
+        except:
+            csm("Multiplier value error. Make sure that the multiplier value is NOT zero.")
+
+
         if self.PI_lock_enabled is True:
             if changed_param_id == 0: 
                 curr_P_val = self.var_spinbox_rate_P.value() 
-                new_I_val = self.I_YAW_MULTIPLIER*curr_P_val
+                new_I_val = coupling_value*curr_P_val
                 self.var_spinbox_rate_I.setValue(new_I_val)
 
             elif changed_param_id == 1:
                 curr_I_val = self.var_spinbox_rate_I.value() 
-                
-                I_inv_yaw_mult = 0.0
-                try:
-                    I_inv_yaw_mult = 1/self.I_YAW_MULTIPLIER
-                except:
-                    csm("Multiplier value error. Make sure I_YAW_MULTIPLIER is NOT zero.")
 
-                new_P_val = I_inv_yaw_mult*curr_I_val
+                new_P_val = inv_coupling_value*curr_I_val
                 self.var_spinbox_rate_P.setValue(new_P_val)
 
+    def _roll_pitch_lock(self):
+        # Toggle the state flag
+        self.ROLL_PITCH_lock_enabled = not self.ROLL_PITCH_lock_enabled
+
+        if self.ROLL_PITCH_lock_enabled is True:
+            csm("Roll and Pitch axes are now locked.")
+        else:
+            csm("Roll and Pitch axes are now unlocked.")
