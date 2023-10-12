@@ -270,7 +270,6 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
             self.var_reg_error.setText("%.5f" % 0.0)
             return
         
-         
         self.var_ref_value.setText("%.5f" % self.attitude_target_t[self.atp])
         self.var_act_value.setText("%.5f" % self.attitude_t[self.atp])
         self.var_reg_error.setText("%.5f" % self.regulation_error[self.atp])

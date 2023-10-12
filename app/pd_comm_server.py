@@ -18,6 +18,7 @@ MODULE_NAME = 'SERVER'
 sm = StatusMonitor(MODULE_NAME)
 csm = sm.cmd_status_monit
 
+VEHICLES = {1: "(QUAD)PLANE", 2: "QUADROTOR"}
 
 ## SITL
 class ServerHandle():
@@ -36,6 +37,12 @@ class ServerHandle():
         # Class datafields
         self.attitude_target = None
         csm("Server Handle Initialized...")
+        
+        self.VEHICLE_TYPE = self.vh._vehicle_type
+        self.VT = self.VEHICLE_TYPE        
+        csm("Vehicle type:{}".format(VEHICLES[self.VT]))
+
+
 
 
     def _parse_attitude_target(self, vehicle, message_name, message):
@@ -86,49 +93,100 @@ class ServerHandle():
         return 
     
     def get_STAB_PITCH_P(self):
-        return self.vh.parameters['Q_A_ANG_PIT_P']
+        if self.VT == 1:
+            return self.vh.parameters['Q_A_ANG_PIT_P']
+        elif self.VT == 2:
+            return self.vh.parameters['ATC_ANG_PIT_P']
 
     def get_STAB_ROLL_P(self):
-        return self.vh.parameters['Q_A_ANG_RLL_P']
+        if self.VT == 1:
+            return self.vh.parameters['Q_A_ANG_RLL_P']
+        elif self.VT == 2:
+            return self.vh.parameters['ATC_ANG_RLL_P']
 
     def get_STAB_YAW_P(self):
-        return self.vh.parameters['Q_A_ANG_YAW_P']
+        if self.VT == 1:
+            return self.vh.parameters['Q_A_ANG_YAW_P']
+        elif self.VT == 2:
+            return self.vh.parameters['ATC_ANG_YAW_P']
     
 
     #FIXME: Get rid of the boilerplate code
 
     def get_RATE_ROLL_PID(self) -> np.array:
-        p = self.vh.parameters['Q_A_RAT_RLL_P']
-        i = self.vh.parameters['Q_A_RAT_RLL_I']
-        d = self.vh.parameters['Q_A_RAT_RLL_D']
-        return np.array([p,i,d]).T
+        if self.VT == 1:
+            p = self.vh.parameters['Q_A_RAT_RLL_P']
+            i = self.vh.parameters['Q_A_RAT_RLL_I']
+            d = self.vh.parameters['Q_A_RAT_RLL_D']
+            return np.array([p,i,d]).T
+        elif self.VT == 2:
+            p = self.vh.parameters['ATC_RAT_RLL_P']
+            i = self.vh.parameters['ATC_RAT_RLL_I']
+            d = self.vh.parameters['ATC_RAT_RLL_D']
+            return np.array([p,i,d]).T
     
     def get_RATE_PITCH_PID(self) -> np.array:
-        p = self.vh.parameters['Q_A_RAT_PIT_P']
-        i = self.vh.parameters['Q_A_RAT_PIT_I']
-        d = self.vh.parameters['Q_A_RAT_PIT_D']
-        return np.array([p,i,d]).T
-    
+        if self.VT == 1:
+            p = self.vh.parameters['Q_A_RAT_PIT_P']
+            i = self.vh.parameters['Q_A_RAT_PIT_I']
+            d = self.vh.parameters['Q_A_RAT_PIT_D']
+            return np.array([p,i,d]).T
+        elif self.VT == 2:
+            p = self.vh.parameters['ATC_RAT_PIT_P']
+            i = self.vh.parameters['ATC_RAT_PIT_I']
+            d = self.vh.parameters['ATC_RAT_PIT_D']
+            return np.array([p,i,d]).T
+
+
+
     def get_RATE_YAW_PID(self) -> np.array:
-        p = self.vh.parameters['Q_A_RAT_YAW_P']
-        i = self.vh.parameters['Q_A_RAT_YAW_I']
-        d = self.vh.parameters['Q_A_RAT_YAW_D']
-        return np.array([p,i,d]).T
+        if self.VT == 1:
+            p = self.vh.parameters['Q_A_RAT_YAW_P']
+            i = self.vh.parameters['Q_A_RAT_YAW_I']
+            d = self.vh.parameters['Q_A_RAT_YAW_D']
+            return np.array([p,i,d]).T
+        elif self.VT == 2:
+            p = self.vh.parameters['ATC_RAT_YAW_P']
+            i = self.vh.parameters['ATC_RAT_YAW_I']
+            d = self.vh.parameters['ATC_RAT_YAW_D']
+            return np.array([p,i,d]).T
+        
+
     
     def set_RATE_STAB_ROLL(self, pid_rate: np.array, p_stab: np.array):
-        self.vh.parameters['Q_A_RAT_RLL_P'] = pid_rate[0]
-        self.vh.parameters['Q_A_RAT_RLL_I'] = pid_rate[1]
-        self.vh.parameters['Q_A_RAT_RLL_D'] = pid_rate[2]
-        self.vh.parameters['Q_A_ANG_RLL_P'] = p_stab
+        if self.VT == 1:
+            self.vh.parameters['Q_A_RAT_RLL_P'] = pid_rate[0]
+            self.vh.parameters['Q_A_RAT_RLL_I'] = pid_rate[1]
+            self.vh.parameters['Q_A_RAT_RLL_D'] = pid_rate[2]
+            self.vh.parameters['Q_A_ANG_RLL_P'] = p_stab
+        elif self.VT == 2:
+            self.vh.parameters['ATC_RAT_RLL_P'] = pid_rate[0]
+            self.vh.parameters['ATC_RAT_RLL_I'] = pid_rate[1]
+            self.vh.parameters['ATC_RAT_RLL_D'] = pid_rate[2]
+            self.vh.parameters['ATC_ANG_RLL_P'] = p_stab
+
 
     def set_RATE_STAB_PITCH(self, pid_rate: np.array, p_stab: np.array):
-        self.vh.parameters['Q_A_RAT_PIT_P'] = pid_rate[0]
-        self.vh.parameters['Q_A_RAT_PIT_I'] = pid_rate[1]
-        self.vh.parameters['Q_A_RAT_PIT_D'] = pid_rate[2]
-        self.vh.parameters['Q_A_ANG_PIT_P'] = p_stab
+        if self.VT == 1:
+            self.vh.parameters['Q_A_RAT_PIT_P'] = pid_rate[0]
+            self.vh.parameters['Q_A_RAT_PIT_I'] = pid_rate[1]
+            self.vh.parameters['Q_A_RAT_PIT_D'] = pid_rate[2]
+            self.vh.parameters['Q_A_ANG_PIT_P'] = p_stab
+        elif self.VT == 2:
+            self.vh.parameters['ATC_RAT_PIT_P'] = pid_rate[0]
+            self.vh.parameters['ATC_RAT_PIT_I'] = pid_rate[1]
+            self.vh.parameters['ATC_RAT_PIT_D'] = pid_rate[2]
+            self.vh.parameters['ATC_ANG_PIT_P'] = p_stab
 
     def set_RATE_STAB_YAW(self, pid_rate: np.array, p_stab: np.array):
-        self.vh.parameters['Q_A_RAT_YAW_P'] = pid_rate[0]
-        self.vh.parameters['Q_A_RAT_YAW_I'] = pid_rate[1]
-        self.vh.parameters['Q_A_RAT_YAW_D'] = pid_rate[2]
-        self.vh.parameters['Q_A_ANG_YAW_P'] = p_stab
+        if self.VT == 1:
+            self.vh.parameters['Q_A_RAT_YAW_P'] = pid_rate[0]
+            self.vh.parameters['Q_A_RAT_YAW_I'] = pid_rate[1]
+            self.vh.parameters['Q_A_RAT_YAW_D'] = pid_rate[2]
+            self.vh.parameters['Q_A_ANG_YAW_P'] = p_stab
+        elif self.VT == 2:
+            self.vh.parameters['ATC_RAT_YAW_P'] = pid_rate[0]
+            self.vh.parameters['ATC_RAT_YAW_I'] = pid_rate[1]
+            self.vh.parameters['ATC_RAT_YAW_D'] = pid_rate[2]
+            self.vh.parameters['ATC_ANG_YAW_P'] = p_stab
+
