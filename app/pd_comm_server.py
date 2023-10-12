@@ -59,6 +59,7 @@ class ServerHandle():
     def get_attitude_numpy(self):
         r = self.vh.attitude.roll
         p = self.vh.attitude.pitch
+        #y = self.vh.attitude.yaw - math.pi
         y = self.vh.attitude.yaw
 
         # Return Column Vector of current RPY values 
@@ -67,18 +68,29 @@ class ServerHandle():
         except Exception as e:
             csm("Attitude - No data received.")
             return np.zeros((3,1))
+    
+
+    def _constrain_angle(self,r):
+        c_ang = -(r + math.pi)
+        if c_ang < -math.pi:
+            c_ang += 2*math.pi
+        elif c_ang > math.pi:
+            c_ang -= 2*math.pi
+        
+        return c_ang
 
     def get_attitude_target_numpy(self):
         # rates
         # r_t = self.attitude_target.body_roll_rate
         # p_t = self.attitude_target.body_pitch_rate
         # y_t = self.attitude_target.body_yaw_rate
+
         try: 
             r = R.from_quat(np.array(self.attitude_target.q))
             r = r.as_euler('zyx', degrees=False).T
-            r[2] -= math.pi
-            r[2] = -r[2]
             r[0] = -r[0]
+
+            r[2] = self._constrain_angle(r[2])
 
             return r
             
