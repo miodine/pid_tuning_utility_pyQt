@@ -17,7 +17,8 @@ from collections import deque
 
 # Server Dependencies
 import time
-TARGET_IP = 'udpin:localhost:14551'
+TARGET_IP = '192.168.4.2:14550'
+BAUD_RATE = 57600
 
 # Module Parameters
 MODULE_NAME = 'VIEW_MODEL'
@@ -344,7 +345,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self._dynamic_ax.figure.canvas.draw()
 
     def _server_connector_routine(self):
-        self.server_handle = ServerHandle(TARGET_IP)
+        self.server_handle = ServerHandle(TARGET_IP, BAUD_RATE)
         self.sh = self.server_handle
 
     def _evaluate_regulation_error(self):
