@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>633</width>
-    <height>802</height>
+    <height>866</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>340</y>
+      <y>410</y>
       <width>281</width>
       <height>101</height>
      </rect>
@@ -78,7 +78,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>550</y>
+      <y>620</y>
       <width>601</width>
       <height>51</height>
      </rect>
@@ -180,7 +180,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>510</y>
+      <y>580</y>
       <width>601</width>
       <height>16</height>
      </rect>
@@ -193,7 +193,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>320</y>
+      <y>390</y>
       <width>601</width>
       <height>16</height>
      </rect>
@@ -206,7 +206,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>670</y>
+      <y>740</y>
       <width>601</width>
       <height>20</height>
      </rect>
@@ -219,7 +219,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>300</y>
+      <y>370</y>
       <width>601</width>
       <height>21</height>
      </rect>
@@ -257,7 +257,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>290</y>
+      <y>360</y>
       <width>601</width>
       <height>16</height>
      </rect>
@@ -270,7 +270,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
+      <y>90</y>
       <width>601</width>
       <height>261</height>
      </rect>
@@ -281,7 +281,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>690</y>
+      <y>760</y>
       <width>601</width>
       <height>41</height>
      </rect>
@@ -323,7 +323,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>624</y>
+      <y>694</y>
       <width>601</width>
       <height>41</height>
      </rect>
@@ -389,7 +389,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>524</y>
+      <y>594</y>
       <width>291</width>
       <height>21</height>
      </rect>
@@ -402,7 +402,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>600</y>
+      <y>670</y>
       <width>291</width>
       <height>21</height>
      </rect>
@@ -415,7 +415,7 @@
     <property name="geometry">
      <rect>
       <x>300</x>
-      <y>340</y>
+      <y>410</y>
       <width>121</width>
       <height>112</height>
      </rect>
@@ -455,7 +455,7 @@
     <property name="geometry">
      <rect>
       <x>440</x>
-      <y>340</y>
+      <y>410</y>
       <width>171</width>
       <height>111</height>
      </rect>
@@ -477,7 +477,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>476</y>
+      <y>546</y>
       <width>601</width>
       <height>31</height>
      </rect>
@@ -503,7 +503,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>460</y>
+      <y>530</y>
       <width>601</width>
       <height>16</height>
      </rect>
@@ -511,6 +511,54 @@
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
     </property>
+   </widget>
+   <widget class="Line" name="line_13">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>810</y>
+      <width>601</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="Line" name="line_14">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>60</y>
+      <width>601</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>601</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="layout_ip_input">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Target Platform IP:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QTextEdit" name="textEdit"/>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

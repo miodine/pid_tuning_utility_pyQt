@@ -1,5 +1,5 @@
 from utils.pd_monit import StatusMonitor
-from layout.pd_ui_ver_03_3 import Ui_MainWindow
+from layout.pd_ui_ver_04_1 import Ui_MainWindow
 from app.pd_comm_server import ServerHandle
 
 from matplotlib.backends.backend_qt5agg import (
@@ -17,7 +17,8 @@ from collections import deque
 
 # Server Dependencies
 import time
-TARGET_IP = '192.168.4.2:14550'
+#TARGET_IP = '192.168.4.2:14550'
+TARGET_IP = 'udpin:localhost:14550'
 BAUD_RATE = 57600
 
 # Module Parameters
@@ -114,11 +115,9 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         #       the linear Z axis rate/stab tuning, then it would be better
         #       to store those signal trajectories in a separate array.
 
-        dynamic_canvas = FigureCanvas(Figure(figsize=(1, 1)))
-        self.dynamic_plot = QtWidgets.QHBoxLayout(
-            self.horizontalLayoutWidget_4)
+        dynamic_canvas = FigureCanvas(Figure(figsize=(3, 2)))
+        self.dynamic_plot = self.layout_signal_viz
         self.dynamic_plot.addWidget(dynamic_canvas)
-        self.dynamic_plot.setGeometry(QtCore.QRect(10, 10, 20, 10))
         self._dynamic_ax = dynamic_canvas.figure.subplots()
 
         self._timer = dynamic_canvas.new_timer(
