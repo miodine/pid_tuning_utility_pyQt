@@ -65,7 +65,7 @@
     </property>
     <item>
      <widget class="QWidget" name="layout_pid_app_utils" native="true">
-      <layout class="QVBoxLayout" name="layout_main" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
+      <layout class="QVBoxLayout" name="layout_main" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
        <property name="sizeConstraint">
         <enum>QLayout::SetMinimumSize</enum>
        </property>
@@ -89,7 +89,35 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="layout_target_ip" stretch="0,0">
+        <layout class="QHBoxLayout" name="layout_target_connection">
+         <item>
+          <widget class="QLabel" name="label_target_type">
+           <property name="text">
+            <string>Select Connection Type:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radio_sitl">
+           <property name="text">
+            <string>SITL</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radio_hitl">
+           <property name="text">
+            <string>HITL</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="layout_target_ip" stretch="0,0,0,0">
          <property name="spacing">
           <number>4</number>
          </property>
@@ -105,12 +133,30 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Target Platform IP:</string>
+            <string>Platform Address:</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="var_lineedit_target_ip"/>
+          <widget class="QLineEdit" name="var_lineedit_target_ip">
+           <property name="text">
+            <string>udpin:localhost:14550</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="button_target_ip_connect">
+           <property name="text">
+            <string>Connect</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="button_target_ip_disconnect">
+           <property name="text">
+            <string>Disconnect</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -236,7 +282,7 @@
           </layout>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
+          <layout class="QVBoxLayout" name="layout_axis_select">
            <item>
             <widget class="QRadioButton" name="radio_roll">
              <property name="text">

@@ -1,6 +1,9 @@
 from utils.pd_monit import StatusMonitor
-from layout.pd_ui_ver_04_1 import Ui_MainWindow
+from utils.pd_spinbox_constraint import *
+
+from layout.pd_ui_ver_04_4 import Ui_MainWindow
 from app.pd_comm_server import ServerHandle
+
 
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
@@ -17,6 +20,7 @@ from collections import deque
 
 # Server Dependencies
 import time
+
 #TARGET_IP = '192.168.4.2:14550'
 TARGET_IP = 'udpin:localhost:14550'
 BAUD_RATE = 57600
@@ -24,50 +28,16 @@ BAUD_RATE = 57600
 # Module Parameters
 MODULE_NAME = 'VIEW_MODEL'
 
+# State transition model flags
+STM = {'NOT_CONNECTED': 0,
+       'TRY_CONNECT': 1,
+       'CONNECTED': 2,
+       'TRY_DISCONNECT': 3}
+
 
 # Monitoring Utilities
 sm = StatusMonitor(MODULE_NAME)
 csm = sm.cmd_status_monit
-
-
-# Keys
-# SRC: https://doc.qt.io/archives/qtjambi-4.5.2_01/com/trolltech/qt/core/Qt.Key.html
-class SPBC:
-    def __init__(self, min_, max_, step_):
-        self.min = float(min_)
-        self.max = float(max_)
-        self.step = float(step_)
-
-
-class UiSpinboxConstraints:
-    # Quadplane tuning parameter constraints.
-    # Source: https://ardupilot.org/plane/docs/parameters.html#q-parameters
-
-    ROLL_STAB_P = SPBC(3, 12, 0.001)
-    PITCH_STAB_P = SPBC(3, 12, 0.001)
-    YAW_STAB_P = SPBC(3, 12, 0.001)
-
-    ROLL_RATE_P = SPBC(0.01, 0.5, 0.005)
-    ROLL_RATE_I = SPBC(0.01, 2.0, 0.01)
-    ROLL_RATE_D = SPBC(0, 0.05, 0.001)
-
-    PITCH_RATE_P = SPBC(0.01, 0.5, 0.005)
-    PITCH_RATE_I = SPBC(0.01, 2.0, 0.01)
-    PITCH_RATE_D = SPBC(0, 0.05, 0.001)
-
-    YAW_RATE_P = SPBC(0.1, 2.5, 0.005)
-    YAW_RATE_I = SPBC(0.01, 1.0, 0.01)
-    YAW_RATE_D = SPBC(0, 0.02, 0.001)
-
-    # FIXME: Boilerplate
-
-    def get_constraint_list_by_axis(self, axis):
-        if axis == 0:
-            return [self.ROLL_RATE_P, self.ROLL_RATE_I, self.ROLL_RATE_D, self.ROLL_STAB_P]
-        elif axis == 1:
-            return [self.PITCH_RATE_P, self.PITCH_RATE_I, self.PITCH_RATE_D, self.PITCH_STAB_P]
-        elif axis == 2:
-            return [self.YAW_RATE_P, self.YAW_RATE_I, self.YAW_RATE_D, self.YAW_STAB_P]
 
 
 # TODO: Refactor method names
@@ -82,10 +52,12 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         sm.connect(self.var_monit)
 
         # FIXME: Add 'init_flag' - to monitor the sate of the initializaztion
-        self.__init_server_connector()
         self.__init_view_datafields()
         self.__init_dynamic_plot()
         self.__init_event_connectors()
+        self.__init_server_connector()
+
+        self._stm_handle(STM['NOT_CONNECTED'])
 
     def retranslateUi(self, MainWindow):
         super().retranslateUi(MainWindow)
@@ -96,7 +68,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def __init_dynamic_plot(self):
         # Constants
-        self.DYNAMIC_PLOT_BUFFER_SIZE = 101
+        self.DYNAMIC_PLOT_BUFFER_SIZE = 51
         self._n = self.DYNAMIC_PLOT_BUFFER_SIZE
 
         self.DYNAMIC_PLOT_INTERVAL_LIMIT = 5
@@ -121,25 +93,21 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self._dynamic_ax = dynamic_canvas.figure.subplots()
 
         self._timer = dynamic_canvas.new_timer(
-            10, [(self._dynamic_plot_update, (), {})])
+            4, [(self._dynamic_plot_update, (), {})])
         self._timer.start()
 
-    def __init_server_connector(self):
-        # Server Connector
-        self.sh = None
-
-        self.thread = threading.Thread(target=self._server_connector_routine)
-        self.thread.start()
-
-        # FIXME: move to StatusMonitor utilities:
-        t = time.time()
-        while self.sh is None:
-            t_now = time.time()
-            if (t_now - t) > 10:
-                csm("Waiting for server handle... ")
-                t = time.time()
-
     def __init_view_datafields(self):
+        self.CONNECTION_ADDRESSES = {'SITL_DEFAULT': 'udpin:localhost:14550',
+                                     'HITL_DEFAULT': '192.168.4.2:14550'}
+        self.CADDR = self.CONNECTION_ADDRESSES
+
+        self.CONNECTION_BAUD_RATES = {'SITL_DEFAULT': 57600,
+                                      'HITL_DEFAULT': 57600}
+
+        self.CBAUD = self.CONNECTION_BAUD_RATES
+
+        self.cbaud_flag = 'SITL_DEFAULT'
+
         self.AXES_ID = {"ROLL": 0, "PITCH": 1, "YAW": 2, "ALTITUDE": 3}
         self.AID = self.AXES_ID
 
@@ -170,17 +138,17 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pid_rate_def_roll = None
         self.p_stab_def_roll = None
-        self._get_init_default_controller_values(self.AID['ROLL'])
+        # self._get_init_default_controller_values(self.AID['ROLL'])
         csm("Roll default OK")
 
         self.pid_rate_def_pitch = None
         self.p_stab_def_pitch = None
-        self._get_init_default_controller_values(self.AID['PITCH'])
+        # self._get_init_default_controller_values(self.AID['PITCH'])
         csm("Pitch default OK")
 
         self.pid_rate_def_yaw = None
         self.p_stab_def_yaw = None
-        self._get_init_default_controller_values(self.AID['YAW'])
+        # self._get_init_default_controller_values(self.AID['YAW'])
 
         csm("Yaw default OK")
         csm("All rotation axes OK. No altitude parameters.")
@@ -195,12 +163,22 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.radio_alt.toggled.connect(
             lambda: self._ui_select_axis(self.AID['ALTITUDE']))
 
+        self.radio_sitl.toggled.connect(
+            lambda: self._ui_connection_type('SITL_DEFAULT'))
+        self.radio_hitl.toggled.connect(
+            lambda: self._ui_connection_type('HITL_DEFAULT'))
+
         self.button_upload_tuning.clicked.connect(
             self._upload_defined_controller_values)
         self.button_download_tuning.clicked.connect(
             self._download_controller_values)
         self.button_upload_default_tuning.clicked.connect(
             self._upload_default_controller_values)
+
+        self.button_target_ip_connect.clicked.connect(
+            lambda: self._stm_handle(STM["TRY_CONNECT"]))
+        self.button_target_ip_disconnect.clicked.connect(
+            lambda: self._stm_handle(STM["TRY_DISCONNECT"]))
 
         self.checkbox_combine_pi_values.toggled.connect(self._PI_lock)
         self.checkbox_combine_roll_pitch_axes.toggled.connect(
@@ -211,6 +189,59 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.var_spinbox_rate_I.valueChanged.connect(
             lambda: self._evaluate_PI_lock(self.PaID["I_RATE"]))
 
+    def __init_server_connector(self):
+        self.sh = None
+        self.thread = None
+        self.conn_target_ip = None
+        self.conn_baud_rate = None
+
+    def _stm_handle(self, STM_FLAG: int):
+        if STM_FLAG == 0:
+            self.__stm_not_connected()
+        elif STM_FLAG == 1:
+            self.__stm_try_conect()
+        elif STM_FLAG == 2:
+            self.__stm_connected()
+        elif STM_FLAG == 3:
+            self.__stm_try_disconnect()
+        else:
+            csm("State Transition Model ERROR - State not Implemented!")
+            csm("Resetting...")
+            self.__stm_not_connected()
+            csm("State Transition Model - State NOT_CONNECTED")
+
+    def __stm_not_connected(self):
+        self.button_target_ip_connect.setEnabled(True)
+        self.button_target_ip_disconnect.setEnabled(False)
+        self._ui_set_enabled_all(False)
+        csm("Please enter the target platform's IP...")
+
+    def __stm_try_conect(self):
+        csm("Trying to connect...")
+        self.conn_target_ip = self.var_lineedit_target_ip.text()
+
+        # FIXME: make that work properly.
+        self.conn_baud_rate = self.CBAUD[self.cbaud_flag]
+
+        self._server_connect()
+        
+
+        # -> connected
+        return 1
+
+    def __stm_try_disconnect(self):
+        self._server_disconnect()
+
+        # -> no_connection
+        return 1
+
+    def __stm_connected(self):
+        self.button_target_ip_connect.setEnabled(False)
+        self.button_target_ip_disconnect.setEnabled(True)
+        self._ui_set_enabled_all(True)
+        csm("Please enter the target platform's IP...")
+        return 1
+
     def _ui_select_axis(self, selected_axis):
         self.atp = selected_axis
         self._download_controller_values()
@@ -220,10 +251,10 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self._dynamic_plot_clear()
 
         if selected_axis not in range(0, 3):
-            self._ui_set_enabled_all(False)
+            self._ui_set_enabled_spinboxes(False)
 
         else:
-            self._ui_set_enabled_all(True)
+            self._ui_set_enabled_spinboxes(True)
             self.PI_lock_enabled = False  # entry point for the state machine
             self.ROLL_PITCH_lock_enabled = False
 
@@ -245,9 +276,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.checkbox_combine_roll_pitch_axes.setEnabled(False)
                 self.checkbox_combine_roll_pitch_axes.setChecked(False)
 
-    # FIXME: Refactor. Indicate that this method concerns only spinbox (or common datafields)
-
-    def _ui_set_enabled_all(self, enabled: bool):
+    def _ui_set_enabled_spinboxes(self, enabled: bool):
         self.var_spinbox_rate_P.setEnabled(enabled)
         self.var_spinbox_rate_I.setEnabled(enabled)
         self.var_spinbox_rate_D.setEnabled(enabled)
@@ -255,6 +284,27 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # no max accelleration at this time
         self.var_spinbox_stabilization_Accel.setEnabled(False)
+
+    def _ui_set_enabled_interface(self, enabled: bool):
+
+        #
+        self.checkbox_combine_pi_values.setEnabled(enabled)
+        self.checkbox_combine_roll_pitch_axes.setEnabled(enabled)
+
+        #
+        self.radio_yaw.setEnabled(enabled)
+        self.radio_pitch.setEnabled(enabled)
+        self.radio_roll.setEnabled(enabled)
+        self.radio_alt.setEnabled(enabled)
+
+        #
+        self.button_upload_tuning.setEnabled(enabled)
+        self.button_download_tuning.setEnabled(enabled)
+        self.button_upload_default_tuning.setEnabled(enabled)
+
+    def _ui_set_enabled_all(self, enabled: bool):
+        self._ui_set_enabled_spinboxes(enabled)
+        self._ui_set_enabled_interface(enabled)
 
     def _ui_update_static_textfields(self):
         self.var_spinbox_rate_P.setValue(self.pid_rate[0])
@@ -300,6 +350,10 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
             # These are the default ones, so we don't have to modify them.
             # Check the generated pd_ui_xxx file (layout folder) to make sure they're there.
 
+    def _ui_connection_type(self, conn_type: str):
+        self.var_lineedit_target_ip.setText(self.CADDR[conn_type])
+        self.cbaud_flag = conn_type
+
     def _dynamic_plot_clear(self):
 
         self._dynamic_ax.clear()
@@ -321,6 +375,9 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self._evaluate_regulation_error()
         self._ui_update_dynamic_textfields()
 
+        if self.sh is None:
+            return
+
         # Primary (plot-related) continuous events:
         self.attitude_t = self.sh.get_attitude_numpy()
         self.attitude_target_t = self.sh.get_attitude_target_numpy()
@@ -337,19 +394,45 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
             self._dynamic_ax.plot(
                 self.t, self.dp_attitude[self.atp, :], label="Actual")
             self._dynamic_ax.plot(
-                self.t, self.dp_attitude_target[self.atp, :], label="Target")
+                self.t, self.dp_attitude_target[self.atp, :], label="Target", marker='+')
+            self._dynamic_ax.fill_between(
+                self.t, self.dp_attitude[self.atp, :], self.dp_attitude_target[self.atp, :], color='#CFCFCF')
             self._dynamic_ax.legend()
             self._dynamic_ax.grid()
 
         self._dynamic_ax.figure.canvas.draw()
 
+    def _server_disconnect(self):
+        if self.thread is not None:
+            self.thread.stop()
+            self.thread = None
+            self._stm_handle(STM["NOT_CONNECTED"])
+
+    def _server_connect(self):
+        # Server Connector
+
+        self.thread = threading.Thread(target=self._server_connector_routine)
+        self.thread.start()
+
+        # FIXME: move to StatusMonitor utilities:
+        t = time.time()
+        csm("Waiting for server handle... ")
+
+        while self.sh is None:
+            t_now = time.time()
+            if (t_now - t) > 10:
+                csm("Waiting for server handle... ")
+                t = time.time()
+
+        self._stm_handle(STM["CONNECTED"])
+
     def _server_connector_routine(self):
-        self.server_handle = ServerHandle(TARGET_IP, BAUD_RATE)
+        self.server_handle = ServerHandle(
+            self.conn_target_ip, self.conn_baud_rate)
         self.sh = self.server_handle
 
     def _evaluate_regulation_error(self):
-        self.regulation_error = self.attitude_target_t - self.attitude_t\
-
+        self.regulation_error = self.attitude_target_t - self.attitude_t
 
     def _download_controller_values(self):
         csm("Downloading controller parameter values from the flight controller...")
@@ -369,6 +452,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         csm("Download complete.")
         self._ui_update_static_textfields()
 
+    # FIXME: Mark for deletion
     def _get_init_default_controller_values(self, axis_id):
         no_params_flag = None
 
