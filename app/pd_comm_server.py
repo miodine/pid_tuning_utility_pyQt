@@ -25,13 +25,13 @@ VEHICLES = {1: "(QUAD)PLANE", 2: "QUADROTOR"}
 
 class ServerHandle():
 
-    def __init__(self, target_udp_address: str, conn_baud_rate: int):
+    def __init__(self, target_udp_address: str):
 
         # Vehicle handle initialization
 
         csm("Server Handle Initialization...")
         self.vehicle_handle = connect(
-            target_udp_address, wait_ready=True, baud=conn_baud_rate)
+            target_udp_address, wait_ready=True)
         self.vh = self.vehicle_handle   # abstraction
 
         # Message listeners
