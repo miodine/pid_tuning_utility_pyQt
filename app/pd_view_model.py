@@ -17,8 +17,11 @@ from collections import deque
 
 # Server Dependencies
 import time
-TARGET_IP = '192.168.4.2:14550'
-BAUD_RATE = 57600
+#TARGET_IP = '192.168.4.2:14550'
+#BAUD_RATE = 57600
+
+TARGET_IP = 'udpin:localhost:14550'
+BAUD_RATE = 115200
 
 # Module Parameters
 MODULE_NAME = 'VIEW_MODEL'
@@ -95,7 +98,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def __init_dynamic_plot(self):
         # Constants
-        self.DYNAMIC_PLOT_BUFFER_SIZE = 101
+        self.DYNAMIC_PLOT_BUFFER_SIZE = 51
         self._n = self.DYNAMIC_PLOT_BUFFER_SIZE
 
         self.DYNAMIC_PLOT_INTERVAL_LIMIT = 5
@@ -122,7 +125,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self._dynamic_ax = dynamic_canvas.figure.subplots()
 
         self._timer = dynamic_canvas.new_timer(
-            10, [(self._dynamic_plot_update, (), {})])
+            5, [(self._dynamic_plot_update, (), {})])
         self._timer.start()
 
     def __init_server_connector(self):
@@ -338,7 +341,10 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
             self._dynamic_ax.plot(
                 self.t, self.dp_attitude[self.atp, :], label="Actual")
             self._dynamic_ax.plot(
-                self.t, self.dp_attitude_target[self.atp, :], label="Target")
+                self.t, self.dp_attitude_target[self.atp, :], label="Target", marker = '+')
+            
+            self._dynamic_ax.fill_between(self.t, self.dp_attitude[self.atp, :], self.dp_attitude_target[self.atp, :], color='#CFCFCF')
+
             self._dynamic_ax.legend()
             self._dynamic_ax.grid()
 
