@@ -239,7 +239,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.button_target_ip_connect.setEnabled(False)
         self.button_target_ip_disconnect.setEnabled(True)
         self._ui_set_enabled_all(True)
-        csm("Please enter the target platform's IP...")
+        csm("Connected! Select Axis to Tune...")
         return 1
 
     def _ui_select_axis(self, selected_axis):
