@@ -51,13 +51,19 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
         sm.connect(self.var_monit)
 
-        # FIXME: Add 'init_flag' - to monitor the sate of the initializaztion
+        self.init_status = {"DATAFIELDS":       'NOT INIT', 
+                            "DYNAMIC_PLOT":     'NOT_INIT',
+                            "EVENT_CONNECTORS": 'NOT_INIT',
+                            "SERVER_CONNECTOR": 'NOT_INIT'}
+
         self.__init_view_datafields()
         self.__init_dynamic_plot()
         self.__init_event_connectors()
         self.__init_server_connector()
 
         self._stm_handle(STM['NOT_CONNECTED'])
+
+
 
     def retranslateUi(self, MainWindow):
         super().retranslateUi(MainWindow)
@@ -95,6 +101,8 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self._timer = dynamic_canvas.new_timer(
             4, [(self._dynamic_plot_update, (), {})])
         self._timer.start()
+
+        self.init_status["DYNAMIC_PLOT"] = "OK"
 
     def __init_view_datafields(self):
         self.CONNECTION_ADDRESSES = {'SITL_DEFAULT': 'udpin:localhost:14550',
@@ -138,20 +146,19 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pid_rate_def_roll = None
         self.p_stab_def_roll = None
-        # self._get_init_default_controller_values(self.AID['ROLL'])
-        csm("Roll default OK")
+        sm("Roll default OK")
 
         self.pid_rate_def_pitch = None
         self.p_stab_def_pitch = None
-        # self._get_init_default_controller_values(self.AID['PITCH'])
         csm("Pitch default OK")
 
         self.pid_rate_def_yaw = None
         self.p_stab_def_yaw = None
-        # self._get_init_default_controller_values(self.AID['YAW'])
 
         csm("Yaw default OK")
         csm("All rotation axes OK. No altitude parameters.")
+
+        self.init_status["DATAFIELDS"] = "OK"
 
     def __init_event_connectors(self):
         self.radio_pitch.toggled.connect(
@@ -189,11 +196,17 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.var_spinbox_rate_I.valueChanged.connect(
             lambda: self._evaluate_PI_lock(self.PaID["I_RATE"]))
 
+
+        self.init_status["EVENT_CONNECTORS"] = "OK"
+
+
     def __init_server_connector(self):
         self.sh = None
         self.thread = None
         self.conn_target_ip = None
         self.conn_baud_rate = None
+
+        self.init_status["SERVER_CONNECTOR"] = "OK"
 
     def _stm_handle(self, STM_FLAG: int):
         if STM_FLAG == 0:
@@ -414,7 +427,6 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.thread = threading.Thread(target=self._server_connector_routine)
         self.thread.start()
 
-        # FIXME: move to StatusMonitor utilities:
         t = time.time()
         csm("Waiting for server handle... ")
 
@@ -436,46 +448,30 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _download_controller_values(self):
         csm("Downloading controller parameter values from the flight controller...")
-        if self.atp == 0:
-            self.pid_rate = self.sh.get_RATE_ROLL_PID()
-            self.p_stab = self.sh.get_STAB_ROLL_P()
+        
+        try:
+            if self.atp == 0:
+                self.pid_rate = self.sh.get_RATE_ROLL_PID()
+                self.p_stab = self.sh.get_STAB_ROLL_P()
 
-        elif self.atp == 1:
-            self.pid_rate = self.sh.get_RATE_PITCH_PID()
-            self.p_stab = self.sh.get_STAB_PITCH_P()
+            elif self.atp == 1:
+                self.pid_rate = self.sh.get_RATE_PITCH_PID()
+                self.p_stab = self.sh.get_STAB_PITCH_P()
 
-        elif self.atp == 2:
-            self.pid_rate = self.sh.get_RATE_YAW_PID()
-            self.p_stab = self.sh.get_STAB_YAW_P()
+            elif self.atp == 2:
+                self.pid_rate = self.sh.get_RATE_YAW_PID()
+                self.p_stab = self.sh.get_STAB_YAW_P()
 
-        # FIXME: try-except routine for checking of download errors.
-        csm("Download complete.")
-        self._ui_update_static_textfields()
+            csm("Download complete.")
+            self._ui_update_static_textfields()
 
-    # FIXME: Mark for deletion
-    def _get_init_default_controller_values(self, axis_id):
-        no_params_flag = None
+        except Exception as e:
+            print(e)
 
-        while no_params_flag is None:
 
-            if axis_id == 0:
-                self.pid_rate_def_roll = self.sh.get_RATE_ROLL_PID()
-                self.p_stab_def_roll = self.sh.get_STAB_ROLL_P()
+        csm("Download Failed (Check Logs)")
+        
 
-                if(self.pid_rate_def_roll is not None) and (self.p_stab_def_roll is not None):
-                    no_params_flag = 0
-
-            elif axis_id == 1:
-                self.pid_rate_def_pitch = self.sh.get_RATE_PITCH_PID()
-                self.p_stab_def_pitch = self.sh.get_STAB_PITCH_P()
-                if(self.pid_rate_def_pitch is not None) and (self.p_stab_def_pitch is not None):
-                    no_params_flag = 0
-
-            elif axis_id == 2:
-                self.pid_rate_def_yaw = self.sh.get_RATE_YAW_PID()
-                self.p_stab_def_yaw = self.sh.get_STAB_YAW_P()
-                if(self.pid_rate_def_yaw is not None) and (self.p_stab_def_yaw is not None):
-                    no_params_flag = 0
 
     def _upload_defined_controller_values(self):
         self.pid_rate[0] = self.var_spinbox_rate_P.value()
@@ -485,7 +481,6 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
         csm("Uploading the tuning...")
 
-        # FIXME: Optimize the logic.
         if self.ROLL_PITCH_lock_enabled is True and (self.atp == 0 or self.atp == 1):
             self.sh.set_RATE_STAB_ROLL(self.pid_rate, self.p_stab)
             self.sh.set_RATE_STAB_PITCH(self.pid_rate, self.p_stab)
@@ -497,7 +492,6 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.sh.set_RATE_STAB_PITCH(self.pid_rate, self.p_stab)
             elif self.atp == 2:
                 self.sh.set_RATE_STAB_YAW(self.pid_rate, self.p_stab)
-
             csm("Upload successful.")
 
     # FIXME: Boilerplate. Transmission error handling
