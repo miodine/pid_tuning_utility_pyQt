@@ -146,7 +146,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pid_rate_def_roll = None
         self.p_stab_def_roll = None
-        sm("Roll default OK")
+        csm("Roll default OK")
 
         self.pid_rate_def_pitch = None
         self.p_stab_def_pitch = None
