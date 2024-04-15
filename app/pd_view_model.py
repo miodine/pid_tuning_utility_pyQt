@@ -20,10 +20,11 @@ from collections import deque
 
 # Server Dependencies
 import time
-
 #TARGET_IP = '192.168.4.2:14550'
+#BAUD_RATE = 57600
+
 TARGET_IP = 'udpin:localhost:14550'
-BAUD_RATE = 57600
+BAUD_RATE = 115200
 
 # Module Parameters
 MODULE_NAME = 'VIEW_MODEL'
@@ -99,7 +100,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self._dynamic_ax = dynamic_canvas.figure.subplots()
 
         self._timer = dynamic_canvas.new_timer(
-            4, [(self._dynamic_plot_update, (), {})])
+            5, [(self._dynamic_plot_update, (), {})])
         self._timer.start()
 
         self.init_status["DYNAMIC_PLOT"] = "OK"
@@ -407,9 +408,10 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
             self._dynamic_ax.plot(
                 self.t, self.dp_attitude[self.atp, :], label="Actual")
             self._dynamic_ax.plot(
-                self.t, self.dp_attitude_target[self.atp, :], label="Target", marker='+')
-            self._dynamic_ax.fill_between(
-                self.t, self.dp_attitude[self.atp, :], self.dp_attitude_target[self.atp, :], color='#CFCFCF')
+                self.t, self.dp_attitude_target[self.atp, :], label="Target", marker = '+')
+            
+            self._dynamic_ax.fill_between(self.t, self.dp_attitude[self.atp, :], self.dp_attitude_target[self.atp, :], color='#CFCFCF')
+
             self._dynamic_ax.legend()
             self._dynamic_ax.grid()
 
