@@ -8,7 +8,7 @@ from layout.pd_ui_ver_04_1 import Ui_MainWindow
 
 import sys
 
-# UNIT TEST
+# module test
 if __name__ == "__main__":
     
 

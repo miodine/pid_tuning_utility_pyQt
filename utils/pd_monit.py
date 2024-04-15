@@ -1,6 +1,5 @@
 from PyQt5 import QtWidgets as QW
 
-# 
 class StatusMonitor:
     def __init__(self, subsystem_ID: str):
         self._subsystem_id = subsystem_ID

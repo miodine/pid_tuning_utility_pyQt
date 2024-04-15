@@ -1,0 +1,11 @@
+# Required Packages (v3, v4) 
+
+# Required Python ver. >3.6.9 and <3.7
+
+pymavlink==2.4.40          # UAV Communication Dependency
+dronekit==2.9.2            # UAV Communication Framework
+numpy==1.19.5
+scipy==1.5.4
+pyqt5==5.13                # GUI Framework
+qdarkstyle==3.1            # GUI Framework Styling
+matplotlib==3.3.4          # Signal Visualization

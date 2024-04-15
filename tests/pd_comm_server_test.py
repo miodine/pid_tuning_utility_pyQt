@@ -9,7 +9,7 @@ import time
 
 
 
-# UNIT TEST
+# module test
 if __name__ == "__main__":
     sitl_platform_udp = 'udpin:localhost:14551'
     sh = ServerHandle(sitl_platform_udp)

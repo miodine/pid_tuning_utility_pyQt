@@ -105,7 +105,7 @@ class ViewModel(QtWidgets.QMainWindow, Ui_MainWindow):
         self.init_status["DYNAMIC_PLOT"] = "OK"
 
     def __init_view_datafields(self):
-        self.CONNECTION_ADDRESSES = {'SITL_DEFAULT': 'udpin:localhost:14550',
+        self.CONNECTION_ADDRESSES = {'SITL_DEFAULT': 'tcp:localhost:5763',
                                      'HITL_DEFAULT': '192.168.4.2:14550'}
         self.CADDR = self.CONNECTION_ADDRESSES
 
