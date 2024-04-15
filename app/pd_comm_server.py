@@ -20,8 +20,6 @@ csm = sm.cmd_status_monit
 
 VEHICLES = {1: "(QUAD)PLANE", 2: "QUADROTOR"}
 
-# SITL
-
 
 class ServerHandle():
 
@@ -34,7 +32,24 @@ class ServerHandle():
             target_udp_address, wait_ready=True, baud=conn_baud_rate)
         self.vh = self.vehicle_handle   # abstraction
 
-        # Message listeners
+        # Request Attitude Target
+
+        msg = self.vh.message_factory.command_long_encode(
+            0,  # Target system ID
+            0,  # Target component ID
+            mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
+            0,  # Confirmation
+            mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE_TARGET ,  # param1: Message ID to be streamed
+            1000000, # param2: Interval in microseconds
+            0,       # param3 (unused)
+            0,       # param4 (unused)
+            0,       # param5 (unused)
+            0,       # param5 (unused)
+            0        # param6 (unused)
+        )
+        
+        self.vh.send_mavlink(msg)
+        
         self.vh.add_message_listener(
             "ATTITUDE_TARGET", self._parse_attitude_target)
 
